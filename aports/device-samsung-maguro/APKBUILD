@@ -1,11 +1,11 @@
 pkgname=device-samsung-maguro
 pkgver=2
-pkgrel=2
+pkgrel=3
 pkgdesc="Google Galaxy Nexus (GSM)"
 url="https://github.com/postmarketOS"
 arch="noarch"
 license="MIT"
-depends="linux-samsung-tuna"
+depends="linux-samsung-tuna mkbootimg"
 makedepends=""
 install=""
 subpackages=""
@@ -21,4 +21,4 @@ package() {
 		"$pkgdir"/etc/deviceinfo
 }
 
-sha512sums="eaeafab8e394c95c007d00e97b9b3563aedb006013f22b2fae500026700f009a3ef871a911b423103ef59cfae12bfeef96542e75bc22bcace8e17c308cbbddf6  deviceinfo"
+sha512sums="172afe24c2277e66ccd6bcd9fc31da518711fd5951ee8d57523a1f77bb5f0818215c0686510230d1faf8c43f3b57b1b72f474dcbf8d6e9a8155481876acfc0fb  deviceinfo"

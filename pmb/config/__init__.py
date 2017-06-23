@@ -197,9 +197,8 @@ flash_mount_bind = [
 flashers = {
     "fastboot": {
         "depends": ["android-tools"],
-        "actions":
-                {
-                    "list_devices": [["fastboot", "devices", "-l"]],
+        "actions": {
+            "list_devices": [["fastboot", "devices", "-l"]],
             "flash_system": [["fastboot", "flash", "system", "$IMAGE"]],
             "flash_kernel": [["fastboot",
                               "--base", "$OFFSET_BASE",
@@ -219,12 +218,11 @@ flashers = {
     },
     "heimdall": {
         "depends": ["heimdall"],
-        "actions":
-                {
-                    "list_devices": [["heimdall", "detect"]],
+        "actions": {
+            "list_devices": [["heimdall", "detect"]],
             "flash_system": [
-                        ["heimdall_wait_for_device.sh"],
-                        ["heimdall", "flash", "--SYSTEM", "$IMAGE"]],
+                ["heimdall_wait_for_device.sh"],
+                ["heimdall", "flash", "--SYSTEM", "$IMAGE"]],
             "flash_kernel": [["heimdall_flash_kernel.sh", "$RAMDISK", "$KERNEL"]]
         },
     },
