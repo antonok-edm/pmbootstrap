@@ -47,8 +47,8 @@ unlock_root_partition()
 			sleep 1
 		else
 			if $(cryptsetup isLuks "$partition"); then
-				cryptsetup luksOpen "$partition" root
-				log "info" "decrypted $partition"
+				cryptsetup luksOpen "$partition" root || continue
+				log "info" "unlocked $partition"
 			else
 				log "info" "unencrypted $partition"
 				break

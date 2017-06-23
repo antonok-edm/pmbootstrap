@@ -4,8 +4,6 @@ TELNET_PORT=23
 
 . /init_functions.sh
 
-log "info" "show_splash $partition"
-
 usb_setup_android() {
 	SYS=/sys/class/android_usb/android0
 	[ -e "$SYS" ] || return
@@ -55,7 +53,7 @@ partition=$(find_root_partition)
 usb_setup_android
 dhcpcd_start
 
-if $(cryptsetup isLuks "$partition"); then
+if cryptsetup isLuks "$partition"; then
 	log "info" "password needed to decrypt $partition, launching telnetd"
 	telnetd_start
 fi
