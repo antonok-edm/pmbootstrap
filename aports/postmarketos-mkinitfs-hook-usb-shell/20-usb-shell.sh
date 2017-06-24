@@ -2,6 +2,9 @@
 IP=172.16.42.1
 TELNET_PORT=24
 
+usb_setup_android
+dhcpcd_start
+
 telnetd -b "${IP}:${TELNET_PORT}" -l /bin/sh
 
 echo "---"

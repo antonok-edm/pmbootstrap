@@ -1,6 +1,6 @@
 pkgname=postmarketos-mkinitfs-hook-usb-shell
 pkgver=0.0.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Root shell in the initramfs (security hole, for debugging only)"
 url="https://github.com/postmarketOS"
 # multipath-tools: kpartx
