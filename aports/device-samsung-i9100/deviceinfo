@@ -14,11 +14,13 @@ deviceinfo_modules_initfs=""
 deviceinfo_external_disk="true"
 deviceinfo_external_disk_install="true"
 deviceinfo_flash_methods="heimdall"
-deviceinfo_generate_bootimg="true"
+deviceinfo_generate_bootimg="false"
 deviceinfo_arch="armhf"
 
 
 # You can for example extract these from an existing boot.img
+# The i9100's bootloader simply uses a regular vmlinuz image
+# instead of Android's boot.img format!
 deviceinfo_flash_offset_base=""
 deviceinfo_flash_offset_kernel=""
 deviceinfo_flash_offset_ramdisk=""
