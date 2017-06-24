@@ -46,10 +46,10 @@ def format_and_mount_root(args):
 
 
 def format_and_mount_pm_crypt(args):
-    if args.no_fde:
-        device = "/dev/installp2"
-    else:
+    if args.full_disk_encryption:
         device = "/dev/mapper/pm_crypt"
+    else:
+        device = "/dev/installp2"
     mountpoint = "/mnt/install"
     logging.info("(native) format " + device + " (ext4), mount to " +
                  mountpoint)
