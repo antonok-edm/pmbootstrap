@@ -27,10 +27,19 @@ for file in ${sh_files}; do
 	shellcheck "${file}"
 done
 
+# Shell (postmarketos-mkinitfs): shellcheck
+cd aports/postmarketos-mkinitfs
+sh_files="init_functions.sh init.sh.in"
+echo "Test with shellcheck (postmarketos-mkinitfs aport): $sh_files"
+# shellcheck disable=SC2086
+shellcheck $sh_files
+
+
 # Python: flake8
 # E501: max line length
 # F401: imported, but not used, does not make sense in __init__ files
 # E402: module import not on top of file, not possible for testcases
+cd "$DIR"/..
 echo "Test with flake8: *.py"
 echo "NOTE: Run 'autopep8 -ria $PWD' to fix code style issues"
 py_files="$(find . -name '*.py')"
