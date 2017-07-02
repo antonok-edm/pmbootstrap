@@ -192,18 +192,26 @@ def arguments():
     cfg = pmb.config.load(args)
     for varname in cfg["pmbootstrap"]:
         if varname not in args or not getattr(args, varname):
-            setattr(args, varname, cfg["pmbootstrap"][varname])
+            value = cfg["pmbootstrap"][varname]
+            if varname in pmb.config.defaults:
+                default = pmb.config.defaults[varname]
+                if isinstance(default, bool):
+                    value = (value.lower() == "true")
+            setattr(args, varname, value)
 
     # Replace $WORK in variables from user's config
     for varname in cfg["pmbootstrap"]:
         old = getattr(args, varname)
-        setattr(args, varname, old.replace("$WORK", args.work))
+        if isinstance(old, str):
+            setattr(args, varname, old.replace("$WORK", args.work))
 
     # Add convinience shortcuts
     setattr(args, "arch_native", pmb.parse.arch.alpine_native())
 
     # Add a caching dict
-    setattr(args, "cache", {"apkindex": {}, "apk_min_version_checked": []})
+    setattr(args, "cache", {"apkindex": {},
+                            "apk_min_version_checked": [],
+                            "aports_files_out_of_sync_with_git": None})
 
     # Add and verify the deviceinfo (only after initialization)
     if args.action != "init":

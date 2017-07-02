@@ -58,7 +58,7 @@ def main():
         if args.action == "aportgen":
             pmb.aportgen.generate(args, args.package)
         elif args.action == "build":
-            pmb.build.package(args, args.package, args.arch, args.force, False,
+            pmb.build.package(args, args.package, args.arch, args.force,
                               args.buildinfo)
         elif args.action == "build_init":
             pmb.build.init(args, args.suffix)
