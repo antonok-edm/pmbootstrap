@@ -79,7 +79,7 @@ def recurse(args, pkgnames, arch=None, in_apkindexes=True, in_aports=True,
         if in_aports:
             aport = pmb.build.find_aport(args, pkgname, False)
             if aport:
-                apkbuild = pmb.parse.apkbuild(aport + "/APKBUILD")
+                apkbuild = pmb.parse.apkbuild(args, aport + "/APKBUILD")
                 depends = apkbuild["depends"]
         if depends is None and in_apkindexes:
             depends = apkindex(args, pkgname, arch)

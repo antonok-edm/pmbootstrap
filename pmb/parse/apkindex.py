@@ -118,8 +118,7 @@ def parse_next_block(args, path, lines, start):
     return None
 
 
-def parse_add_block(path, strict, ret, block, pkgname=None,
-                    version_new=None):
+def parse_add_block(path, strict, ret, block, pkgname=None):
     """
     Add one block to the return dictionary of parse().
 
@@ -140,8 +139,6 @@ def parse_add_block(path, strict, ret, block, pkgname=None,
     # Defaults
     if not pkgname:
         pkgname = block["pkgname"]
-    if not version_new:
-        version_new = block["version"]
 
     # Handle duplicate entries
     if pkgname in ret:
@@ -151,6 +148,7 @@ def parse_add_block(path, strict, ret, block, pkgname=None,
         # Ignore the block, if the block we already have has a higher
         # version
         version_old = ret[pkgname]["version"]
+        version_new = block["version"]
         if compare_version(version_old, version_new) == 1:
             return
 
@@ -207,8 +205,7 @@ def parse(args, path, strict=False):
             for alias in block["provides"]:
                 split = alias.split("=")
                 if len(split) == 2:
-                    parse_add_block(path, strict, ret, block, split[0],
-                                    split[1])
+                    parse_add_block(path, strict, ret, block, split[0])
 
     # Update the cache
     args.cache["apkindex"][path] = {"lastmod": lastmod, "ret": ret}

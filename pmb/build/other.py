@@ -38,14 +38,23 @@ def find_aport(args, package, must_exist=True):
     if os.path.exists(path):
         return path
 
+    # Try to get a cached result first (we assume, that the aports don't change
+    # in one pmbootstrap call)
+    if path in args.cache["find_aport"]:
+        return args.cache["find_aport"][path]
+
+    ret = None
     for path_current in glob.glob(args.aports + "/*/APKBUILD"):
-        apkbuild = pmb.parse.apkbuild(path_current)
+        apkbuild = pmb.parse.apkbuild(args, path_current)
         if package in apkbuild["subpackages"]:
-            return os.path.dirname(path_current)
-    if must_exist:
+            ret = os.path.dirname(path_current)
+            break
+    if ret is None and must_exist:
         raise RuntimeError("Could not find aport for package: " +
                            package)
-    return None
+
+    args.cache["find_aport"][path] = ret
+    return ret
 
 
 def copy_to_buildpath(args, package, suffix="native"):

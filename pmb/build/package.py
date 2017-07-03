@@ -46,7 +46,7 @@ def package(args, pkgname, carch, force=False, buildinfo=False):
                            " and could not find this package in any APKINDEX!")
 
     # Autodetect the build environment
-    apkbuild = pmb.parse.apkbuild(aport + "/APKBUILD")
+    apkbuild = pmb.parse.apkbuild(args, aport + "/APKBUILD")
     pkgname = apkbuild["pkgname"]
     carch_buildenv = pmb.build.autodetect.carch(args, apkbuild, carch)
     suffix = pmb.build.autodetect.suffix(args, apkbuild, carch_buildenv)

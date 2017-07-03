@@ -107,7 +107,7 @@ def replace_aports_packages_with_path(args, packages, suffix, arch):
     for package in packages:
         aport = pmb.build.find_aport(args, package, False)
         if aport:
-            apkbuild = pmb.parse.apkbuild(aport + "/APKBUILD")
+            apkbuild = pmb.parse.apkbuild(args, aport + "/APKBUILD")
             apk_path = ("/home/user/packages/user/" + arch + "/" +
                         package + "-" + apkbuild["pkgver"] + "-r" +
                         apkbuild["pkgrel"] + ".apk")
@@ -130,12 +130,13 @@ def install(args, packages, suffix="native", build=True):
 
     # Add depends to packages
     arch = pmb.parse.arch.from_chroot_suffix(args, suffix)
-    packages = pmb.parse.depends.recurse(args, packages, arch, strict=True)
+    packages_with_depends = pmb.parse.depends.recurse(args, packages, arch,
+                                                      strict=True)
 
     # Filter out up-to-date packages
     packages_installed = installed(args, suffix)
     packages_todo = []
-    for package in packages:
+    for package in packages_with_depends:
         if build:
             pmb.build.package(args, package, arch)
         if install_is_necessary(
@@ -150,8 +151,14 @@ def install(args, packages, suffix="native", build=True):
         if package.startswith("-"):
             raise ValueError("Invalid package name: " + package)
 
+    # Readable install message without dependencies
+    message = "(" + suffix + ") install"
+    for pkgname in packages:
+        if pkgname not in packages_installed:
+            message += " " + pkgname
+    logging.info(message)
+
     # Install/update everything
-    logging.info("(" + suffix + ") install " + " ".join(packages_todo))
     packages_todo = replace_aports_packages_with_path(args, packages_todo,
                                                       suffix, arch)
     pmb.chroot.root(args, ["apk", "--no-progress", "add", "-u"] + packages_todo,

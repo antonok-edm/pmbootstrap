@@ -45,7 +45,8 @@ def test_challenge_build(args):
     pmb.build.package(args, pkgname, None, force=True, buildinfo=True)
 
     # Copy it to a temporary path
-    apkbuild = pmb.parse.apkbuild(args.aports + "/" + pkgname + "/APKBUILD")
+    apkbuild = pmb.parse.apkbuild(args, args.aports + "/" + pkgname +
+                                  "/APKBUILD")
     version = apkbuild["pkgver"] + "-r" + apkbuild["pkgrel"]
     temp_path = pmb.chroot.other.tempfolder(args, "/tmp/test_challenge_build/" +
                                             args.arch_native)

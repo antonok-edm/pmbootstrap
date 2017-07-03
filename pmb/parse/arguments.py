@@ -187,6 +187,10 @@ def arguments():
                                 " .apk, or must be named"
                                 " APKINDEX.tar.gz.")
 
+    # Action: parse_apkindex
+    parse_apkindex = sub.add_parser("parse_apkindex")
+    parse_apkindex.add_argument("apkindex_path")
+
     # Use defaults from the user's config file
     args = parser.parse_args()
     cfg = pmb.config.load(args)
@@ -208,10 +212,12 @@ def arguments():
     # Add convinience shortcuts
     setattr(args, "arch_native", pmb.parse.arch.alpine_native())
 
-    # Add a caching dict
+    # Add a caching dict (caches parsing of files etc. for the current session)
     setattr(args, "cache", {"apkindex": {},
+                            "apkbuild": {},
                             "apk_min_version_checked": [],
-                            "aports_files_out_of_sync_with_git": None})
+                            "aports_files_out_of_sync_with_git": None,
+                            "find_aport": {}})
 
     # Add and verify the deviceinfo (only after initialization)
     if args.action != "init":
