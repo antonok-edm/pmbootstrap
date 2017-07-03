@@ -16,6 +16,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with pmbootstrap.  If not, see <http://www.gnu.org/licenses/>.
 """
+import logging
 import pmb.chroot
 import pmb.chroot.apk
 import pmb.parse.apkindex
@@ -62,6 +63,9 @@ def recurse(args, pkgnames, arch=None, in_apkindexes=True, in_aports=True,
     :param in_aports: look through the aports folder
     :param strict: raise RuntimeError, when a dependency can not be found.
     """
+    logging.debug("Calculate depends of packages " + str(pkgnames) +
+                  ", arch: " + arch)
+
     # Sanity check
     if not apkindex and not in_aports:
         raise RuntimeError("Set at least one of apkindex or aports to True.")
