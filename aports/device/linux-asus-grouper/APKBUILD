@@ -33,6 +33,8 @@ source="
 	$_config
 	compiler-gcc6.h
 	duplicate-return-address-definition.patch
+	nvram.txt
+	fw_bcmdhd.bin
 "
 subpackages=""
 license="GPL2"
@@ -95,14 +97,23 @@ build() {
 }
 
 package() {
+	echo "--[ Installing kernel ]--"
 	install -Dm644 "$srcdir/build/arch/arm/boot/zImage" \
 		"$pkgdir/boot/vmlinuz-$_flavor"
 
 	install -D "$srcdir/build/include/config/kernel.release" \
 		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+	
+	echo "--[ Adding vendor firmware ]--"
+	# install wifi firmware
+	mkdir -p "$pkgdir/lib/firmware/postmarketos"
+	cp "$srcdir/nvram.txt" "$pkgdir/lib/firmware/postmarketos/nvram.txt"
+	cp "$srcdir/fw_bcmdhd.bin" "$pkgdir/lib/firmware/postmarketos/fw_bcmdhd.bin"
 }
 
 sha512sums="9ef2e62a9f589914743d2a585dce0307e32deb18ec12838a8626dd442ad03993cccaf7b0bf699e87510398d28a410270f893d3b624c9e98e6c5dc4568584bb17  linux-asus-grouper-953e26f2709dfe0c185c3c99c50b0c9d56d473a4.tar.gz
-3a655e00e4820f123010de8a6bbe7b757b53d352d0e51eef5de4565bd8f473a6735d5bb7961f5abd9fc4de9b0312f303d1819986756a7c603e2e69aa806ab144  config-asus-grouper.armhf
+65de04287b29b7eeb957846cafdde575fa2cf81f5c53ad48ab1efbefb4d3c2586c185e183eeb134b7301c3fd0ca7a113a753d3c7fc6645f471d855ec4a31c009  config-asus-grouper.armhf
 d80980e9474c82ba0ef1a6903b434d8bd1b092c40367ba543e72d2c119301c8b2d05265740e4104ca1ac5d15f6c4aa49e8776cb44264a9a28dc551e0d1850dcc  compiler-gcc6.h
-9b15bf1f6cb66f54c785b0af6c9db8a7d63257e6fa3eeb0cbf47284334166aa6a7ff93e1b64ab69206c8047d64641199c0f5fcbc257bbe039263252fff45118e  duplicate-return-address-definition.patch"
+9b15bf1f6cb66f54c785b0af6c9db8a7d63257e6fa3eeb0cbf47284334166aa6a7ff93e1b64ab69206c8047d64641199c0f5fcbc257bbe039263252fff45118e  duplicate-return-address-definition.patch
+bd818f83928028f1a945df37539bf36354c5ec0ce43438e7bb9a2a502ccf88e287c3562f67dfcc1113f6d95cef4be086a6d0f9858ffbd236887421df59c9cfb8  nvram.txt
+2c77481384cc510a85f0d9138713e27b561462d943bf68cc511ff424cc6899bc2068cf3bdeb56f77a31bdd810bb545dfacb63cd9144b4a9a66153cb5d17df71f  fw_bcmdhd.bin"

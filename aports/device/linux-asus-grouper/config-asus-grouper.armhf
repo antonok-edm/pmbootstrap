@@ -1230,8 +1230,8 @@ CONFIG_USB_NET_RNDIS_WLAN=y
 # CONFIG_ATH_COMMON is not set
 # CONFIG_BCM4329 is not set
 CONFIG_BCMDHD=y
-CONFIG_BCMDHD_FW_PATH="/system/vendor/firmware/fw_bcmdhd.bin"
-CONFIG_BCMDHD_NVRAM_PATH="/system/etc/nvram.txt"
+CONFIG_BCMDHD_FW_PATH="/lib/firmware/postmarketos/fw_bcmdhd.bin"
+CONFIG_BCMDHD_NVRAM_PATH="/lib/firmware/postmarketos/nvram.txt"
 # CONFIG_DHD_USE_STATIC_BUF is not set
 CONFIG_DHD_USE_SCHED_SCAN=y
 CONFIG_DHD_ENABLE_P2P=y
@@ -1253,7 +1253,7 @@ CONFIG_DHD_ENABLE_P2P=y
 # CONFIG_USB_CATC is not set
 # CONFIG_USB_KAWETH is not set
 # CONFIG_USB_PEGASUS is not set
-# CONFIG_USB_RTL8150 is not set
+CONFIG_USB_RTL8150=y
 CONFIG_USB_USBNET=y
 CONFIG_USB_NET_AX8817X=y
 CONFIG_USB_NET_CDCETHER=y
