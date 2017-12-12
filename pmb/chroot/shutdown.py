@@ -19,12 +19,24 @@ along with pmbootstrap.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import glob
 import os
+import socket
+from contextlib import closing
 
 import pmb.chroot
 import pmb.chroot.distccd
 import pmb.helpers.mount
 import pmb.install.losetup
 import pmb.parse.arch
+
+
+def kill_adb(args):
+    """
+    Kill adb daemon if it's running.
+    """
+    port = 5038
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+        if sock.connect_ex(("127.0.0.1", port)) == 0:
+            pmb.chroot.root(args, ["adb", "-P", str(port), "kill-server"])
 
 
 def shutdown_cryptsetup_device(args, name):
@@ -55,6 +67,9 @@ def shutdown_cryptsetup_device(args, name):
 def shutdown(args, only_install_related=False):
     pmb.chroot.distccd.stop(args)
 
+    # Stop adb server
+    kill_adb(args)
+
     # Umount installation-related paths (order is important!)
     pmb.helpers.mount.umount_all(args, args.work +
                                  "/chroot_native/mnt/install")
@@ -63,7 +78,7 @@ def shutdown(args, only_install_related=False):
     # Umount all losetup mounted images
     chroot = args.work + "/chroot_native"
     if pmb.helpers.mount.ismount(chroot + "/dev/loop-control"):
-        pattern = chroot + "/home/user/rootfs/*.img"
+        pattern = chroot + "/home/pmos/rootfs/*.img"
         for path_outside in glob.glob(pattern):
             path = path_outside[len(chroot):]
             pmb.install.losetup.umount(args, path)
@@ -76,7 +91,7 @@ def shutdown(args, only_install_related=False):
     if not only_install_related:
         # Clean up the rest
         pmb.helpers.mount.umount_all(args, args.work)
-        arch = args.deviceinfo["arch"]
-        if pmb.parse.arch.cpu_emulation_required(args, arch):
-            pmb.chroot.binfmt.unregister(args, arch)
+        for arch in pmb.config.build_device_architectures:
+            if pmb.parse.arch.cpu_emulation_required(args, arch):
+                pmb.chroot.binfmt.unregister(args, arch)
         logging.info("Shutdown complete")

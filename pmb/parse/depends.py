@@ -25,7 +25,7 @@ import pmb.parse.apkindex
 def recurse_error_message(pkgname, in_aports, in_apkindexes):
     ret = "Could not find package '" + pkgname + "'"
     if in_aports:
-        ret += " aport"
+        ret += " in the aports folder"
         if in_apkindexes:
             ret += " and could not find it"
     if in_apkindexes:
@@ -62,12 +62,12 @@ def recurse(args, pkgnames, arch=None, in_apkindexes=True, in_aports=True,
             continue
 
         # Get depends and pkgname from aports
-        logging.verbose("Get dependencies of: " + pkgname_depend)
         depends = None
+        pkgname = None
         if in_aports:
             aport = pmb.build.find_aport(args, pkgname_depend, False)
             if aport:
-                logging.verbose("-> Found aport: " + aport)
+                logging.verbose(pkgname_depend + ": found aport: " + aport)
                 apkbuild = pmb.parse.apkbuild(args, aport + "/APKBUILD")
                 depends = apkbuild["depends"]
                 if pkgname_depend in apkbuild["subpackages"]:
@@ -77,7 +77,6 @@ def recurse(args, pkgnames, arch=None, in_apkindexes=True, in_aports=True,
 
         # Get depends and pkgname from APKINDEX
         if depends is None and in_apkindexes:
-            logging.verbose("-> Search through APKINDEX files")
             index_data = pmb.parse.apkindex.read_any_index(args, pkgname_depend,
                                                            arch)
             if index_data:
@@ -88,18 +87,17 @@ def recurse(args, pkgnames, arch=None, in_apkindexes=True, in_aports=True,
         if pkgname is None and strict:
             raise RuntimeError(
                 recurse_error_message(
-                    pkgname,
+                    pkgname_depend,
                     in_aports,
                     in_apkindexes))
 
         # Append to todo/ret (unless it is a duplicate)
         if pkgname != pkgname_depend:
-            logging.verbose("-> '" + pkgname_depend + "' is provided by '" +
-                            pkgname + "'")
+            logging.verbose(pkgname_depend + ": provided by '" + pkgname + "'")
         if pkgname in ret:
-            logging.verbose("-> '" + pkgname + "' already found")
+            logging.verbose(pkgname + ": already found")
         else:
-            logging.verbose("-> '" + pkgname + "' depends on: " + str(depends))
+            logging.verbose(pkgname + ": depends on: " + ",".join(depends))
             if depends:
                 todo += depends
             ret.append(pkgname)

@@ -96,8 +96,11 @@ def apkbuild(args, path):
     if path in args.cache["apkbuild"]:
         return args.cache["apkbuild"][path]
 
+    # Read the file and check line endings
     with open(path, encoding="utf-8") as handle:
         lines = handle.readlines()
+        if handle.newlines != '\n':
+            raise RuntimeError("Wrong line endings in APKBUILD: " + path)
 
     # Parse all attributes from the config
     ret = {}
@@ -152,6 +155,10 @@ def apkbuild(args, path):
         logging.info("Pkgname: '" + ret["pkgname"] + "'")
         raise RuntimeError("The pkgname must be equal to the name of"
                            " the folder, that contains the APKBUILD!")
+
+    # Sanity check: arch
+    if not len(ret["arch"]):
+        raise RuntimeError("Arch must not be empty: " + path)
 
     # Fill cache
     args.cache["apkbuild"][path] = ret

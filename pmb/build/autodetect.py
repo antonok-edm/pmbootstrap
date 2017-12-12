@@ -22,26 +22,24 @@ import pmb.chroot.apk
 import pmb.parse.arch
 
 
-def carch(args, apkbuild, carch):
-    if "noarch" in apkbuild["arch"]:
-        return args.arch_native
-    if carch:
-        if "all" not in apkbuild["arch"] and carch not in apkbuild["arch"]:
-            raise RuntimeError("Architecture '" + carch + "' is not supported"
-                               " for this package. Please add it to the"
-                               " 'arch=' line inside the APKBUILD and try"
-                               " again: " + apkbuild["pkgname"])
-        return carch
-    if ("all" in apkbuild["arch"] or
-            args.arch_native in apkbuild["arch"]):
+def arch(args, pkgname):
+    """
+    Find a good default in case the user did not specify for which architecture
+    a package should be built.
+
+    :returns: native architecture (x86_64 in most cases) when the APKBUILD has
+              "noarch" or "all". Otherwise the first architecture in the
+              APKBUILD.
+    """
+    aport = pmb.build.find_aport(args, pkgname)
+    apkbuild = pmb.parse.apkbuild(args, aport + "/APKBUILD")
+    if "noarch" in apkbuild["arch"] or "all" in apkbuild["arch"]:
         return args.arch_native
     return apkbuild["arch"][0]
 
 
-def suffix(args, apkbuild, carch):
-    if carch == args.arch_native:
-        return "native"
-    if "noarch" in apkbuild["arch"]:
+def suffix(args, apkbuild, arch):
+    if arch == args.arch_native:
         return "native"
 
     pkgname = apkbuild["pkgname"]
@@ -52,10 +50,10 @@ def suffix(args, apkbuild, carch):
             if fnmatch.fnmatch(pkgname, pattern):
                 return "native"
 
-    return "buildroot_" + carch
+    return "buildroot_" + arch
 
 
-def crosscompile(args, apkbuild, carch, suffix):
+def crosscompile(args, apkbuild, arch, suffix):
     """
         :returns: None, "native" or "distcc"
     """
@@ -63,7 +61,7 @@ def crosscompile(args, apkbuild, carch, suffix):
         return None
     if apkbuild["pkgname"].endswith("-repack"):
         return None
-    if not pmb.parse.arch.cpu_emulation_required(args, carch):
+    if not pmb.parse.arch.cpu_emulation_required(args, arch):
         return None
     if suffix == "native":
         return "native"

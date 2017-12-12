@@ -1,37 +1,39 @@
+# Contributor: Bart Ribbers <bribbers@disroot.org>
+# Maintainer: Bart Ribbers <bribbers@disroot.org>
 pkgname=kio
-pkgver=5.37.0
-pkgrel=1
+pkgver=5.41.0
+pkgrel=0
 pkgdesc='Resource and network access abstraction'
 arch="all"
 url='https://community.kde.org/Frameworks'
-license="LGPL"
-depends="solid kjobwidgets libxslt desktop-file-utils knotifications"
-makedepends="extra-cmake-modules kdoctools python doxygen qt5-qttools-dev kconfig-dev kdbusaddons-dev
-			 kservice-dev solid-dev kbookmarks-dev kjobwidgets-dev knotifications-dev karchive-dev
-			 kcoreaddons-dev ki18n-dev kwidgetsaddons-dev kcompletion-dev kconfigwidgets-dev
-			 kauth-dev kcodecs-dev kiconthemes-dev kitemviews-dev kwindowsystem-dev qt5-x11extras-dev
-			 kxmlgui-dev ktextwidgets-dev sonnet-dev"
+license="LGPL-2.1"
+depends=""
+depends_dev="kdoctools-dev kconfig-dev kdbusaddons-dev kservice-dev solid-dev kbookmarks-dev
+			kjobwidgets-dev knotifications-dev karchive-dev kcoreaddons-dev ki18n-dev kwidgetsaddons-dev 
+			kcompletion-dev kconfigwidgets-dev kauth-dev kcodecs-dev kiconthemes-dev kitemviews-dev
+			kwindowsystem-dev qt5-x11extras-dev kxmlgui-dev ktextwidgets-dev sonnet-dev qt5-qtscript-dev"
+makedepends="$depends_dev extra-cmake-modules doxygen qt5-qttools-dev libxslt-dev libxml2-dev"
 source="https://download.kde.org/stable/frameworks/${pkgver%.*}/${pkgname}-${pkgver}.tar.xz"
 subpackages="$pkgname-dev $pkgname-doc $pkgname-lang"
-
-prepare() {
-	mkdir -p "$srcdir"/build
-}
+options="!check" # Fails due to requiring running X11
 
 build() {
-	cd "$srcdir"/build
-	cmake "$srcdir"/${pkgname}-${pkgver} \
+	cmake \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DKDE_INSTALL_LIBDIR=lib \
 		-DKDE_INSTALL_LIBEXECDIR=lib \
-		-DBUILD_TESTING=OFF \
 		-DBUILD_QCH=ON
 	make
 }
 
+check() {
+	cd "$builddir"
+	CTEST_OUTPUT_ON_FAILURE=TRUE ctest
+}
+
 package() {
-	cd "$srcdir"/build
+	cd "$builddir"
 	make DESTDIR="${pkgdir}" install
 }
-sha512sums="42b2cbf6cbc414a0b69fdb36984d13574b1aee033170761dc55835cace44abead82f387f8afb35d8a82ee93a1909854ef43cff29d45c5881c4b13ca8862d2a64  kio-5.37.0.tar.xz"
+sha512sums="8f7072bf6268bf07c0c1266cdbee58aacdf43721d193aaa7574c683a4339de3d9701977c8bdd604f301d11393b8d2031e0b90e9ccc42a2c5e62050f41bc04216  kio-5.41.0.tar.xz"

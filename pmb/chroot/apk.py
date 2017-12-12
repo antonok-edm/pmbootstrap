@@ -145,7 +145,8 @@ def install_is_necessary(args, build, arch, package, packages_installed):
         logging.info("WARNING: " + arch + " package '" + package +
                      "' installed version " + data_installed["version"] +
                      " is newer, than the version in the repositories: " +
-                     data_repo["version"])
+                     data_repo["version"] +
+                     " See also: <https://postmarketos.org/warning-repo>")
         return False
 
     # b) Repo newer
@@ -170,7 +171,7 @@ def replace_aports_packages_with_path(args, packages, suffix, arch):
         aport = pmb.build.find_aport(args, package, False)
         if aport:
             apkbuild = pmb.parse.apkbuild(args, aport + "/APKBUILD")
-            apk_path = ("/home/user/packages/user/" + arch + "/" +
+            apk_path = ("/home/pmos/packages/pmos/" + arch + "/" +
                         package + "-" + apkbuild["pkgver"] + "-r" +
                         apkbuild["pkgrel"] + ".apk")
             if os.path.exists(args.work + "/chroot_" + suffix + apk_path):
@@ -195,7 +196,7 @@ def install(args, packages, suffix="native", build=True):
     packages_with_depends = pmb.parse.depends.recurse(args, packages, arch,
                                                       strict=True)
 
-    # Filter out up-to-date packages
+    # Filter outdated packages (build them if required)
     packages_installed = installed(args, suffix)
     packages_todo = []
     for package in packages_with_depends:

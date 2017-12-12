@@ -8,6 +8,7 @@
 # Kernel config based on: arch/arm/configs/lineageos_grouper_defconfig
 # Changes:
 # - enable devtmpfs (needed for udev -> touch support in weston)
+# - disable ANDROID_PARANOID_NETWORK (removes network restrictions)
 
 _vendor=asus
 _flavor=asus-grouper
@@ -20,7 +21,7 @@ case $pkgver in
 	*.*.*)  _kernver=${pkgver%.*};;
 	*.*) _kernver=$pkgver;;
 esac
-pkgrel=4
+pkgrel=7
 arch="armhf"
 pkgdesc="Nexus 7 (2012) kernel from LineageOS"
 url="https://github.com/LineageOS/android_kernel_asus_grouper"
@@ -74,7 +75,7 @@ prepare() {
 	cp -v "$srcdir/compiler-gcc6.h" "$ksrcdir/include/linux/"
 
 	mkdir -p "$srcdir"/build
-	cp "$srcdir"/$_config "$srcdir"/build/.config || return 1
+	cp "$srcdir"/$_config "$srcdir"/build/.config
 	make -C "$ksrcdir" O="$srcdir"/build ARCH="$_carch" HOSTCC="$HOSTCC" \
 		silentoldconfig
 }
@@ -83,7 +84,7 @@ prepare() {
 
 # this is so we can do: 'abuild menuconfig' to reconfigure kernel
 menuconfig() {
-	cd "$srcdir"/build || return 1
+	cd "$srcdir"/build
 	make ARCH="$_carch" menuconfig
 	cp .config "$startdir"/$_config
 }
@@ -92,8 +93,7 @@ build() {
 	cd "$srcdir"/build
 	unset LDFLAGS
 	make ARCH="$_carch" CC="${CC:-gcc}" \
-		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-Alpine" \
-		|| return 1
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-Alpine"
 }
 
 package() {
@@ -111,8 +111,8 @@ package() {
 	cp "$srcdir/fw_bcmdhd.bin" "$pkgdir/lib/firmware/postmarketos/fw_bcmdhd.bin"
 }
 
-sha512sums="9ef2e62a9f589914743d2a585dce0307e32deb18ec12838a8626dd442ad03993cccaf7b0bf699e87510398d28a410270f893d3b624c9e98e6c5dc4568584bb17  linux-asus-grouper-953e26f2709dfe0c185c3c99c50b0c9d56d473a4.tar.gz
-65de04287b29b7eeb957846cafdde575fa2cf81f5c53ad48ab1efbefb4d3c2586c185e183eeb134b7301c3fd0ca7a113a753d3c7fc6645f471d855ec4a31c009  config-asus-grouper.armhf
+sha512sums="11ba20986552a0b913de2a7d756d31ad9f4f67561cb88988737bba07997f00b7574604d1c19f6d890502208f12a21d48d4044edc5a8db5174b2a49d4a87573e3  linux-asus-grouper-953e26f2709dfe0c185c3c99c50b0c9d56d473a4.tar.gz
+a9614499186eb0f7a7b37d07a99b1a8fa5b093370bed2c0d4f7b978b49a47ac858c6cabfa4ec97ca6fec1f579bd342c38722ef930de120ecda78be0341e41411  config-asus-grouper.armhf
 d80980e9474c82ba0ef1a6903b434d8bd1b092c40367ba543e72d2c119301c8b2d05265740e4104ca1ac5d15f6c4aa49e8776cb44264a9a28dc551e0d1850dcc  compiler-gcc6.h
 9b15bf1f6cb66f54c785b0af6c9db8a7d63257e6fa3eeb0cbf47284334166aa6a7ff93e1b64ab69206c8047d64641199c0f5fcbc257bbe039263252fff45118e  duplicate-return-address-definition.patch
 bd818f83928028f1a945df37539bf36354c5ec0ce43438e7bb9a2a502ccf88e287c3562f67dfcc1113f6d95cef4be086a6d0f9858ffbd236887421df59c9cfb8  nvram.txt

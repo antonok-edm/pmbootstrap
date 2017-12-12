@@ -21,33 +21,49 @@ import pmb.config
 import pmb.parse.arch
 
 
+def arguments_export(subparser):
+    ret = subparser.add_parser("export", help="create convenience symlinks"
+                               " to generated image files (system, kernel,"
+                               " initramfs, boot.img, ...)")
+
+    ret.add_argument("export_folder", help="export folder, defaults to"
+                                           " /tmp/postmarketOS-export",
+                     default="/tmp/postmarketOS-export", nargs="?")
+    ret.add_argument("--odin", help="odin flashable tar"
+                                    " (boot.img/kernel+initramfs only)",
+                     action="store_true", dest="odin_flashable_tar")
+    ret.add_argument("--flavor", default=None)
+    return ret
+
+
 def arguments_flasher(subparser):
     ret = subparser.add_parser("flasher", help="flash something to the"
                                " target device")
     sub = ret.add_subparsers(dest="action_flasher")
+    ret.add_argument("--method", help="override flash method",
+                     dest="flash_method", default=None)
 
-    # Other
-    sub.add_parser("flash_system", help="flash the system partition")
+    # Boot, flash kernel
+    boot = sub.add_parser("boot", help="boot a kernel once")
+    boot.add_argument("--cmdline", help="override kernel commandline")
+    flash_kernel = sub.add_parser("flash_kernel", help="flash a kernel")
+    for action in [boot, flash_kernel]:
+        action.add_argument("--flavor", default=None)
+
+    # Flash system
+    flash_system = sub.add_parser(
+        "flash_system", help="flash the system partition")
+    flash_system.add_argument("--partition", default=None, help="partition to flash"
+                              " the system image")
+
+    # Actions without extra arguments
+    sub.add_parser("sideload", help="sideload recovery zip")
     sub.add_parser("list_flavors", help="list installed kernel flavors" +
                    " inside the device rootfs chroot on this computer")
     sub.add_parser("list_devices", help="show connected devices")
 
-    # Boot, flash kernel, export
-    boot = sub.add_parser("boot", help="boot a kernel once")
-    boot.add_argument("--cmdline", help="override kernel commandline")
-    flash_kernel = sub.add_parser("flash_kernel", help="flash a kernel")
-    export = sub.add_parser("export", help="create convenience symlinks to the"
-                                           " generated image files (system,"
-                                           " kernel, initramfs, boot.img, ...)")
-    for action in [boot, flash_kernel, export]:
-        action.add_argument("--flavor", default=None)
-
-    # Export: additional arguments
-    export.add_argument("export_folder", help="export folder, defaults to"
-                                              " /tmp/postmarketOS-export",
-                        default="/tmp/postmarketOS-export", nargs="?")
-    export.add_argument("--odin", help="odin flashable tar (boot.img/kernel+initramfs only)",
-                        action="store_true", dest="odin_flashable_tar")
+    # Deprecated "pmbootstrap flasher export"
+    arguments_export(sub)
     return ret
 
 
@@ -84,8 +100,33 @@ def arguments_initfs(subparser):
     return ret
 
 
+def arguments_qemu(subparser):
+    ret = subparser.add_parser("qemu")
+    ret.add_argument("--arch", choices=["aarch64", "arm", "x86_64"],
+                     help="emulate a different architecture")
+    ret.add_argument("--cmdline", help="override kernel commandline")
+    ret.add_argument(
+        "--image-size", help="set system image size (e.g. 2048M or 2G)")
+    ret.add_argument("-m", "--memory", type=int, default=1024,
+                     help="guest RAM (default: 1024)")
+    ret.add_argument("-p", "--port", type=int, default=2222,
+                     help="SSH port (default: 2222)")
+
+    display = ret.add_mutually_exclusive_group()
+    display.add_argument("--spice", dest="spice_port", const="8077",
+                         action="store", nargs="?", default=None,
+                         help="use SPICE for 2D acceleration (default port:"
+                         " 8077)")
+    display.add_argument("--display", dest="qemu_display", const="sdl,gl=on",
+                         help="Qemu's display parameter (default: sdl,gl=on)",
+                         default="sdl,gl=on", nargs="?")
+    return ret
+
+
 def arguments():
     parser = argparse.ArgumentParser(prog="pmbootstrap")
+    arch_native = pmb.parse.arch.alpine_native()
+    arch_choices = set(pmb.config.build_device_architectures + [arch_native])
 
     # Other
     parser.add_argument("-V", "--version", action="version",
@@ -108,6 +149,11 @@ def arguments():
                         action="store_true")
     parser.add_argument("-w", "--work", help="folder where all data"
                         " gets stored (chroots, caches, built packages)")
+    parser.add_argument("-y", "--assume-yes", help="Assume 'yes' to all"
+                        " question prompts. WARNING: this option will"
+                        " cause normal 'are you sure?' prompts to be"
+                        " disabled!",
+                        action="store_true")
 
     # Logging
     parser.add_argument("-l", "--log", dest="log", default=None,
@@ -128,8 +174,11 @@ def arguments():
     sub.add_parser("shutdown", help="umount, unregister binfmt")
     sub.add_parser("index", help="re-index all repositories with custom built"
                    " packages (do this after manually removing package files)")
+    sub.add_parser("update", help="update all APKINDEX files")
+    arguments_export(sub)
     arguments_flasher(sub)
     arguments_initfs(sub)
+    arguments_qemu(sub)
 
     # Action: log
     log = sub.add_parser("log", help="follow the pmbootstrap logfile")
@@ -148,6 +197,13 @@ def arguments():
                      " the precious, self-compiled packages")
     zap.add_argument("-hc", "--http", action="store_true", help="also delete http"
                      "cache")
+    zap.add_argument("-m", "--mismatch-bins", action="store_true", help="also delete"
+                     " binary packages that are newer than the corresponding"
+                     " package in aports")
+    zap.add_argument("-o", "--old-bins", action="store_true", help="also delete outdated"
+                     " binary packages downloaded from mirrors (e.g. from Alpine)")
+    zap.add_argument("-d", "--distfiles", action="store_true", help="also delete"
+                     " downloaded files cache")
 
     # Action: stats
     stats = sub.add_parser("stats", help="show ccache stats")
@@ -161,10 +217,12 @@ def arguments():
                         " to execute inside the chroot. default: sh", nargs='*')
     for action in [build_init, chroot]:
         suffix = action.add_mutually_exclusive_group()
-        suffix.add_argument("-r", "--rootfs", action="store_true",
-                            help="Chroot for the device root file system")
-        suffix.add_argument("-b", "--buildroot", action="store_true",
-                            help="Chroot for building packages for the device "
+        if action == chroot:
+            suffix.add_argument("-r", "--rootfs", action="store_true",
+                                help="Chroot for the device root file system")
+        suffix.add_argument("-b", "--buildroot", nargs="?", const="device",
+                            choices={"device"} | arch_choices,
+                            help="Chroot for building packages, defaults to device "
                                  "architecture")
         suffix.add_argument("-s", "--suffix", default=None,
                             help="Specify any chroot suffix, defaults to"
@@ -177,14 +235,31 @@ def arguments():
                          " eg. /dev/mmcblk0")
     install.add_argument("--cipher", help="cryptsetup cipher used to"
                          " encrypt the system partition, eg. aes-xts-plain64")
+    install.add_argument("--iter-time", help="cryptsetup iteration time (in"
+                         " miliseconds) to use when encrypting the system"
+                         " partiton")
     install.add_argument("--add", help="comma separated list of packages to be"
                          " added to the rootfs (e.g. 'vim,gcc')")
     install.add_argument("--no-fde", help="do not use full disk encryption",
                          action="store_false", dest="full_disk_encryption")
+    install.add_argument("--flavor",
+                         help="Specify kernel flavor to include in recovery"
+                              " flashable zip", default=None)
+    install.add_argument("--android-recovery-zip",
+                         help="generate TWRP flashable zip",
+                         action="store_true", dest="android_recovery_zip")
+    install.add_argument("--recovery-install-partition", default="system",
+                         help="partition to flash from recovery,"
+                              " eg. external_sd",
+                         dest="recovery_install_partition")
+    install.add_argument("--recovery-no-kernel",
+                         help="do not overwrite the existing kernel",
+                         action="store_false", dest="recovery_flash_kernel")
 
     # Action: menuconfig / parse_apkbuild
     menuconfig = sub.add_parser("menuconfig", help="run menuconfig on"
                                 " a kernel aport")
+    menuconfig.add_argument("--arch", choices=arch_choices)
     parse_apkbuild = sub.add_parser("parse_apkbuild")
     for action in [menuconfig, parse_apkbuild]:
         action.add_argument("package")
@@ -195,11 +270,30 @@ def arguments():
                               " (aport/APKBUILD) based on an upstream aport from Alpine")
     build = sub.add_parser("build", help="create a package for a"
                            " specific architecture")
-    build.add_argument("--arch")
-    build.add_argument("--force", action="store_true")
+    build.add_argument("--arch", choices=arch_choices, default=None,
+                       help="CPU architecture to build for (default: " +
+                       arch_native + " or first available architecture in"
+                       " APKBUILD)")
+    build.add_argument("--force", action="store_true", help="even build if not"
+                       " necessary")
     build.add_argument("--buildinfo", action="store_true")
+    build.add_argument("--strict", action="store_true", help="(slower) zap and install only"
+                       " required depends when building, to detect dependency errors")
+    build.add_argument("-i", "--ignore-depends", action="store_true",
+                       help="only build and install makedepends from an"
+                       " APKBUILD, ignore the depends (old behavior). This is"
+                       " faster for device packages for example, because then"
+                       " you don't need to build and install the kernel. But it"
+                       " is incompatible with how Alpine's abuild handles it.",
+                       dest="ignore_depends")
     for action in [checksum, build, aportgen]:
         action.add_argument("packages", nargs="+")
+
+    # Action: kconfig_check
+    kconfig_check = sub.add_parser("kconfig_check", help="check, whether all"
+                                   " the necessary options are"
+                                   " enabled/disabled in the kernel config")
+    kconfig_check.add_argument("packages", nargs="*")
 
     # Action: challenge
     challenge = sub.add_parser("challenge",
@@ -227,36 +321,25 @@ def arguments():
     config.add_argument("name", nargs="?", help="variable name")
     config.add_argument("value", nargs="?", help="set variable to value")
 
-    # Action: qemu
-    qemu = sub.add_parser("qemu")
-    qemu.add_argument("--arch", choices=["aarch64", "arm", "x86_64"],
-                      help="emulate a different architecture")
-    qemu.add_argument("--cmdline", help="override kernel commandline")
-    qemu.add_argument("-m", "--memory", type=int, default=1024,
-                      help="guest RAM (default: 1024)")
-    qemu.add_argument("-p", "--port", type=int, default=2222,
-                      help="ssh port (default: 2222)")
+    # Action: bootimg_analyze
+    bootimg_analyze = sub.add_parser("bootimg_analyze", help="Extract all the"
+                                     " information from an existing boot.img")
+    bootimg_analyze.add_argument("path", help="path to the boot.img")
 
     # Use defaults from the user's config file
     args = parser.parse_args()
-    cfg = pmb.config.load(args)
-    for varname in cfg["pmbootstrap"]:
-        if varname not in args or not getattr(args, varname):
-            value = cfg["pmbootstrap"][varname]
-            if varname in pmb.config.defaults:
-                default = pmb.config.defaults[varname]
-                if isinstance(default, bool):
-                    value = (value.lower() == "true")
-            setattr(args, varname, value)
+    pmb.config.merge_with_args(args)
 
-    # Replace $WORK in variables from user's config
-    for varname in cfg["pmbootstrap"]:
-        old = getattr(args, varname)
+    # Replace $WORK in variables from any config
+    for key, value in pmb.config.defaults.items():
+        if key not in args:
+            continue
+        old = getattr(args, key)
         if isinstance(old, str):
-            setattr(args, varname, old.replace("$WORK", args.work))
+            setattr(args, key, old.replace("$WORK", args.work))
 
     # Add convenience shortcuts
-    setattr(args, "arch_native", pmb.parse.arch.alpine_native())
+    setattr(args, "arch_native", arch_native)
 
     # Add a caching dict (caches parsing of files etc. for the current session)
     setattr(args, "cache", {"apkindex": {},
@@ -264,10 +347,11 @@ def arguments():
                             "apk_min_version_checked": [],
                             "apk_repository_list_updated": [],
                             "aports_files_out_of_sync_with_git": None,
+                            "built": {},
                             "find_aport": {}})
 
     # Add and verify the deviceinfo (only after initialization)
-    if args.action != "init":
+    if args.action not in ("init", "config", "bootimg_analyze"):
         setattr(args, "deviceinfo", pmb.parse.deviceinfo(args))
         arch = args.deviceinfo["arch"]
         if (arch != args.arch_native and

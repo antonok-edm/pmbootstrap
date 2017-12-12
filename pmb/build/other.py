@@ -23,8 +23,9 @@ import shutil
 
 import pmb.build.other
 import pmb.chroot
-import pmb.helpers.run
 import pmb.helpers.file
+import pmb.helpers.git
+import pmb.helpers.run
 import pmb.parse.apkindex
 import pmb.parse.version
 
@@ -76,15 +77,15 @@ def copy_to_buildpath(args, package, suffix="native"):
                          aport)
 
     # Clean up folder
-    build = args.work + "/chroot_" + suffix + "/home/user/build"
+    build = args.work + "/chroot_" + suffix + "/home/pmos/build"
     if os.path.exists(build):
-        pmb.chroot.root(args, ["rm", "-rf", "/home/user/build"],
+        pmb.chroot.root(args, ["rm", "-rf", "/home/pmos/build"],
                         suffix=suffix)
 
     # Copy aport contents
     pmb.helpers.run.root(args, ["cp", "-r", aport + "/", build])
-    pmb.chroot.root(args, ["chown", "-R", "user:user",
-                           "/home/user/build"], suffix=suffix)
+    pmb.chroot.root(args, ["chown", "-R", "pmos:pmos",
+                           "/home/pmos/build"], suffix=suffix)
 
 
 def aports_files_out_of_sync_with_git(args, package=None):
@@ -127,11 +128,9 @@ def aports_files_out_of_sync_with_git(args, package=None):
             git_root = git_root.rstrip()
     ret = []
     if git_root and os.path.exists(git_root):
-        # Find tracked files out of sync with upstream
-        tracked = pmb.helpers.run.user(args, ["git", "diff", "--name-only", "origin"],
-                                       working_dir=git_root, return_stdout=True)
-
-        # Find all untracked files
+        # Find all out of sync files
+        tracked = pmb.helpers.git.find_out_of_sync_files_tracked(
+            args, git_root)
         untracked = pmb.helpers.run.user(
             args, ["git", "ls-files", "--others", "--exclude-standard"],
             working_dir=git_root, return_stdout=True)
@@ -198,7 +197,8 @@ def is_necessary(args, arch, apkbuild, apkindex_path=None):
     if pmb.parse.version.compare(version_old, version_new) == 1:
         logging.warning("WARNING: Package '" + package + "' in your aports folder"
                         " has version " + version_new + ", but the binary package"
-                        " repositories already have version " + version_old + "!")
+                        " repositories already have version " + version_old + "!"
+                        " See also: <https://postmarketos.org/warning-repo2>")
         return False
 
     # b) Aports folder has a newer version
@@ -246,37 +246,22 @@ def index_repo(args, arch=None):
         paths = glob.glob(args.work + "/packages/*")
 
     for path in paths:
-        path_arch = os.path.basename(path)
-        path_repo_chroot = "/home/user/packages/user/" + path_arch
-        logging.info("(native) index " + path_arch + " repository")
-        commands = [
-            ["apk", "index", "--output", "APKINDEX.tar.gz_",
-             "--rewrite-arch", path_arch, "*.apk"],
-            ["abuild-sign", "APKINDEX.tar.gz_"],
-            ["mv", "APKINDEX.tar.gz_", "APKINDEX.tar.gz"]
-        ]
-        for command in commands:
-            pmb.chroot.user(args, command, working_dir=path_repo_chroot)
-        pmb.parse.apkindex.clear_cache(args, args.work + path +
-                                       "/APKINDEX.tar.gz")
-
-
-def symlink_noarch_package(args, arch_apk):
-    """
-    :param arch_apk: for example: x86_64/mypackage-1.2.3-r0.apk
-    """
-
-    for arch in pmb.config.build_device_architectures:
-        # Create the arch folder
-        arch_folder = "/home/user/packages/user/" + arch
-        arch_folder_outside = args.work + "/packages/" + arch
-        if not os.path.exists(arch_folder_outside):
-            pmb.chroot.user(args, ["mkdir", "-p", arch_folder])
-
-        # Add symlink, rewrite index
-        pmb.chroot.user(args, ["ln", "-sf", "../" + arch_apk, "."],
-                        working_dir=arch_folder)
-        index_repo(args, arch)
+        if os.path.exists(path):
+            path_arch = os.path.basename(path)
+            path_repo_chroot = "/home/pmos/packages/pmos/" + path_arch
+            logging.debug("(native) index " + path_arch + " repository")
+            commands = [
+                ["apk", "-q", "index", "--output", "APKINDEX.tar.gz_",
+                 "--rewrite-arch", path_arch, "*.apk"],
+                ["abuild-sign", "APKINDEX.tar.gz_"],
+                ["mv", "APKINDEX.tar.gz_", "APKINDEX.tar.gz"]
+            ]
+            for command in commands:
+                pmb.chroot.user(args, command, working_dir=path_repo_chroot)
+        else:
+            logging.debug("NOTE: Can't build index for non-existing path: " +
+                          path)
+        pmb.parse.apkindex.clear_cache(args, path + "/APKINDEX.tar.gz")
 
 
 def ccache_stats(args, arch):

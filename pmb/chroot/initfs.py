@@ -88,7 +88,7 @@ def ls(args, flavor, suffix, extra=False):
     if extra:
         tmp = "/tmp/initfs-extra-extracted"
     extract(args, flavor, suffix, extra)
-    pmb.chroot.user(args, ["ls", "-lahR", "."], suffix, tmp, log=False)
+    pmb.chroot.root(args, ["ls", "-lahR", "."], suffix, tmp, log=False)
     pmb.chroot.root(args, ["rm", "-r", tmp], suffix)
 
 
@@ -128,5 +128,5 @@ def frontend(args):
             build(args, flavor, suffix)
 
     if action in ["ls", "extract"]:
-        link = "https://github.com/postmarketOS/pmbootstrap/wiki/initramfs-development"
+        link = "https://wiki.postmarketos.org/wiki/Initramfs_development"
         logging.info("See also: <" + link + ">")

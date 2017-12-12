@@ -1,0 +1,21 @@
+pkgname="device-samsung-i9505"
+pkgdesc="Samsung Galaxy S4 International"
+pkgver=0.4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="noarch"
+options="!check"
+depends="linux-samsung-i9505 firmware-samsung-i9505 mkbootimg"
+source="deviceinfo 90-android-sec_touchscreen.rules"
+
+package() {
+	install -Dm644 "$srcdir"/deviceinfo \
+		"$pkgdir"/etc/deviceinfo
+	install -D -m644 "$srcdir"/90-android-sec_touchscreen.rules \
+		"$pkgdir"/etc/udev/rules.d/90-android-sec_touchscreen.rules
+
+}
+
+sha512sums="5b96b607c59d8c9016c1d4609359da7b204e08f426ac360663020733cd6b725dea09f09ebaf6ac5c431f8fb365d65da29ed717f92b66a6104fa0ea21b52cbba2  deviceinfo
+9dd220de9aa0ee4106686d43a4bac858c7b57ca8537488a54176ef13615195dab7945ca3f6896368186e99c7ed78748a2ad25458efe586dbc337190143d5184f  90-android-sec_touchscreen.rules"

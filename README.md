@@ -1,19 +1,22 @@
 # pmbootstrap
 
-[**Introduction**](https://ollieparanoid.github.io/post/postmarketOS) | [**Security Warning**](https://ollieparanoid.github.io/post/security-warning/) | [**Supported Devices**](https://github.com/postmarketOS/pmbootstrap/wiki/Devices) | [![travis badge](https://api.travis-ci.org/postmarketOS/pmbootstrap.png?branch=master)](https://travis-ci.org/postmarketOS/pmbootstrap)
+[**Introduction**](https://postmarketos.org/blog/2017/05/26/intro/) | [**Security Warning**](https://ollieparanoid.github.io/post/security-warning/) | [**Supported Devices**](https://wiki.postmarketos.org/wiki/Supported_devices) | [![travis badge](https://api.travis-ci.org/postmarketOS/pmbootstrap.png?branch=master)](https://travis-ci.org/postmarketOS/pmbootstrap) | [![Coverage status](https://coveralls.io/repos/github/postmarketOS/pmbootstrap/badge.svg)](https://coveralls.io/github/postmarketOS)
 
 Sophisticated chroot/build/flash tool to develop and install postmarketOS.
 
-For in-depth information please refer to the [postmarketOS wiki](https://github.com/postmarketOS/pmbootstrap/wiki).
+For in-depth information please refer to the [postmarketOS wiki](https://wiki.postmarketos.org).
 
 ## Requirements
+* 2 GB of RAM recommended for compiling
 * Linux distribution (`x86_64` or `aarch64`)
+  * [Windows subsystem for Linux (WSL)](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux) does **not** work! Please use [VirtualBox](https://www.virtualbox.org/) instead.
+  * Kernels based on the grsec patchset [do **not** work](https://github.com/postmarketOS/pmbootstrap/issues/107) *(Alpine: use linux-vanilla instead of linux-hardened, Arch: linux-hardened [is not based on grsec](https://www.reddit.com/r/archlinux/comments/68b2jn/linuxhardened_in_community_repo_a_grsecurity/))*
 * Python 3.4+
 * OpenSSL
 
 ## Usage
 
-Assuming you have a supported device, you can build and flash a postmarketOS image by running through the following steps. For new devices check the [porting guide](https://github.com/postmarketOS/pmbootstrap/wiki/Porting-to-a-new-device).
+Assuming you have a supported device, you can build and flash a postmarketOS image by running through the following steps. For new devices check the [porting guide](https://wiki.postmarketos.org/wiki/Porting_to_a_new_device).
 
 First, clone the git repository and initialize your pmbootstrap environment:
 
@@ -42,23 +45,10 @@ $ ./pmbootstrap.py flasher flash_kernel
 $ ./pmbootstrap.py flasher flash_system
 ```
 
-After a reboot, the device will provide a USB network interface, which we request an IP from, and telnet into to open the full-disk encryption on the main system partition:
+After a reboot, the device will prompt for the full-disk encryption password, which you typed in the install step (unless you have disabled full-disk encryption with `--no-fde`). Once the partition has been unlocked it is possible to connect via SSH:
 
 ```shell
 $ dhclient -v enp0s20f0u1
-$ telnet 172.16.42.1
-
-Trying 172.16.42.1...
-Connected to 172.16.42.1.
-Escape character is '^]'.
-
-Enter passphrase for /dev/mapper/mmcblk0p25p2: 
-Connection closed by foreign host.
-```
-
-Once the partition has been unlocked it is possible to connect via SSH:
-
-```shell
 $ ssh user@172.16.42.1
 ```
 
@@ -71,4 +61,3 @@ Install `pytest` (via your package manager or pip) and run it inside the pmboots
 ## License
 
 [GPLv3](LICENSE)
-
